@@ -5,6 +5,20 @@ from pyhdf.VS import *
 import numpy as np
 import netCDF4
 
+def udlift(arr):
+    row, col = arr.shape
+    new_arr = np.zeros(arr.shape)
+    for i in range(row):
+        new_arr[i,:] = arr[row-i-1,:]    
+    return new_arr
+
+def udlift3(arr):
+    hei, row, col = arr.shape
+    new_arr = np.zeros(arr.shape)
+    for i in range(row):
+        new_arr[:,i,:] = arr[:,row-i-1,:]   
+    return new_arr
+
 def get_merra(fname,minlat,maxlat,minlon,maxlon,cdic,verbose=False):
     '''Read data from MERRA hdf file. Note that the Lon values 
        should be between [0-360]. Hdf file with weather model 
@@ -58,6 +72,9 @@ def get_merra(fname,minlat,maxlat,minlon,maxlon,cdic,verbose=False):
         mask2 = (lons > minlon) & (lons < maxlon)
         [ii] = np.where(mask1 == True)
         [jj] = np.where(mask2 == True)
+        nlat0 = len(ii)
+        nlon0 = len(jj)
+        
         del mask1
         del mask2
         iimemo = []
@@ -81,7 +98,7 @@ def get_merra(fname,minlat,maxlat,minlon,maxlon,cdic,verbose=False):
         tmp = gph.copy()                  #Temperature
         vpr = gph.copy()                  #Vapor pressure
         if verbose:
-           print('Number of stations:', nstn)
+            print('Number of stations:', nstn)
     
         # Get data from files
         h = file.select('h')
@@ -157,7 +174,7 @@ def get_merra(fname,minlat,maxlat,minlon,maxlon,cdic,verbose=False):
         # Read the netcdf file
         file = netCDF4.Dataset(fname)
         if verbose:
-	    print('PROGRESS: READING netcdf FILE')
+            print('PROGRESS: READING netcdf FILE')
         ncv = file.variables
         rlvls = ncv['lev'][:] 						# Pressure levels are from lowest to highest
         lvls = []
@@ -176,6 +193,9 @@ def get_merra(fname,minlat,maxlat,minlon,maxlon,cdic,verbose=False):
         mask2 = (lons > minlon) & (lons < maxlon)
         [ii] = np.where(mask1 == True)
         [jj] = np.where(mask2 == True)
+        nlat0 = len(ii)
+        nlon0 = len(jj)
+        
         del mask1
         del mask2
         iimemo = []
@@ -199,7 +219,7 @@ def get_merra(fname,minlat,maxlat,minlon,maxlon,cdic,verbose=False):
         tmp = gph.copy()                  #Temperature
         vpr = gph.copy()                  #Vapor pressure
         if verbose:
-	    print('Number of stations:', nstn)
+            print('Number of stations:', nstn)
     
         # Get data from files
         height = ncv['H'][:]
@@ -229,9 +249,10 @@ def get_merra(fname,minlat,maxlat,minlon,maxlon,cdic,verbose=False):
         tk = np.zeros(nstn)
         tb = np.zeros(nstn)
         for i in range(nstn):
+            k0=int(idx[i])
             t = temp[:,ii[i],jj[i]]
-            x = [lvls[idx[i]],lvls[idx[i] -1 ]]
-            y = [t[nlvls - idx[i] - 1],t[nlvls - idx[i] ]]
+            x = [lvls[k0],lvls[k0 -1 ]]
+            y = [t[nlvls - k0 - 1],t[nlvls - k0 ]]
             coef = np.polyfit(x,y,1)
             tk[i] = coef[0]
             tb[i] = coef[1]
@@ -239,9 +260,10 @@ def get_merra(fname,minlat,maxlat,minlon,maxlon,cdic,verbose=False):
         hk = np.zeros(nstn)
         hb = np.zeros(nstn)
         for i in range(nstn):
+            k0=int(idx[i])
             hum = humidity[:,ii[i],jj[i]]
-            x = [lvls[idx[i]],lvls[idx[i] -1 ]]
-            y = [hum[nlvls - idx[i] - 1],hum[nlvls - idx[i]]]
+            x = [lvls[k0],lvls[k0 -1 ]]
+            y = [hum[nlvls - k0 - 1],hum[nlvls - k0]]
             coef = np.polyfit(x,y,1)
             hk[i] = coef[0]
             hb[i] = coef[1]
@@ -271,6 +293,19 @@ def get_merra(fname,minlat,maxlat,minlon,maxlon,cdic,verbose=False):
         # Close the netcdf file
         file.close()
     
+    latlist=np.reshape(latlist,(nlat0,nlon0));
+    latlist=udlift(latlist)
+    
+    lonlist=np.reshape(lonlist,(nlat0,nlon0));
+    lonlist=udlift(lonlist)
+    
+    gph = np.reshape(gph,(nlvls,nlat0,nlon0))
+    tmp = np.reshape(tmp,(nlvls,nlat0,nlon0))
+    vpr = np.reshape(vpr,(nlvls,nlat0,nlon0))
+    
+    gph = udlift3(gph)
+    tmp = udlift3(tmp)
+    vpr = udlift3(vpr)
     # Send data
     return lvls,latlist,lonlist,gph,tmp,vpr
     

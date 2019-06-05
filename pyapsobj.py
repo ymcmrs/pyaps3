@@ -154,7 +154,7 @@ class PyAPS:
                                                                self.dict,
                                                                verbose=verb)
         elif self.grib in ('MERRA'):
-            assert False, 'Need to modify get_merra to fit with the new standards'
+            #assert False, 'Need to modify get_merra to fit with the new standards'
             [lvls,latlist,lonlist,gph,tmp,vpr] = merra.get_merra(self.gfile,
                                                                  self.minlat,
                                                                  self.maxlat,
@@ -253,11 +253,13 @@ class PyAPS:
         kh = np.arange(minH,maxH)
         self.Delfn_1m = intp_1d(kh)
         self.alti = kh
-
+        
         # no reshape
         Lonu = self.lonlist[0,:]
         Latu = self.latlist[:,0]
         
+        #print(Lonu)
+        #print(Latu)
         # Create the cube interpolator for the bilinear method, to interpolate delays into a grid (x,y,z)
         if self.verb:
             print('PROGRESS: CREATE THE BILINEAR INTERPOLATION FUNCTION')

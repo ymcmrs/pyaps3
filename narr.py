@@ -67,6 +67,17 @@ def get_narr(fname,minlat,maxlat,minlon,maxlon,cdic,verbose=False):
     g = cdic['g']    
     mask = (lats > minlat) & (lats < maxlat) \
     & (lons > minlon) & (lons < maxlon)
+    
+    #extrqct indices ####### Get nlat0 and nlon0 #######
+    uu = [i for i in list(range(np.shape(mask)[0])) if any(mask[i,:])]
+    vv = [j for j in list(range(np.shape(mask)[1])) if any(mask[:,j])]
+    
+    latlist = lats[uu,:][:,vv]
+    lonlist = lons[uu,:][:,vv]
+    #nstn = len(lat.flatten())
+    nlat0, nlon0 = latlist.shape
+    #########################################
+ 
     [ii,jj] = np.where(mask == True)
     del mask
     latlist = lats[ii,jj]
@@ -95,7 +106,11 @@ def get_narr(fname,minlat,maxlat,minlon,maxlon,cdic,verbose=False):
         val = grb[2].values  #Specific humidity
         temp = val[ii,jj]
         vpr[i,:] = temp*lvls[i]*alpha/(1+(alpha - 1)*temp)
-        
+    
+    gph = np.reshape(gph,(nlvls,nlat0,nlon0))
+    tmp = np.reshape(tmp,(nlvls,nlat0,nlon0))
+    vpr = np.reshape(vpr,(nlvls,nlat0,nlon0))    
+    
     return lvls,latlist,lonlist,gph,tmp,vpr
 ###############Completed GET_ERA########################################
 ########Interpolates the NARR delay to a regular grid####################
